@@ -1,4 +1,66 @@
 
 Demo code for spoofing the Erlang distribution protocol between
-connected nodes.
+connected nodes:
+
+http://blog.listincomprehension.com/2010/03/spoofing-erlang-distribution-protocol.html
+ 
+
+Quick usage:
+
+1. Start up a distributed Erlang node:
+
+erl -name spoofed@host.lan
+
+2. Compile spoofed and start up a second Erlang node:
+
+make
+erl -pa ebin
+
+3. Kill the epmd on the local node and look for the port of the node
+you want to spoof:
+
+1> spoof:kill().
+=INFO REPORT==== 5-Apr-2010::14:22:54 ===
+    epmd_port: 4369
+    received: "name spoofed at port 34661\n"
+
+=INFO REPORT==== 5-Apr-2010::14:22:54 ===
+    received: tcp_close
+
+=INFO REPORT==== 5-Apr-2010::14:22:54 ===
+    received: tcp_close
+ok
+
+The node "spoofed" is listening on  port 34661.
+
+2. Start a fake epmd, listening on an unbound port:
+
+$ netstat -an |grep 34662; echo $?
+1
+
+2> spoof:epmd(34662).
+0.36.0>
+
+Port 34662 is the proxy port that will be advertised by our fake epmd.
+
+3a. Start a passthru spoofing proxy:
+
+3> spoof:proxy({{127,0,0,1},34661}, 34662).
+
+OR:
+
+3b. Start a spoofing proxy to transform the data:
+
+3> F = fun(in,X)  -> re:replace(X, "foo", "bar", [{return, binary}]);
+3>        (out,X) -> X end.
+4> spoof:proxy({{127,0,0,1},34661}, 34662, F).
+
+5. Connect to "spoofed@host.lan" from another distributed Erlang node
+   running on another host.
+
+
+TODO
+
+* npmd: allow nodes to register
+* proxy: spoof multiple nodes
 
