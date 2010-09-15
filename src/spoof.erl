@@ -38,7 +38,17 @@ kill() ->
     kill({127,0,0,1},4369).
 kill(IP, Port) ->
     npmd:names(IP, Port),
-    npmd:kill(IP, Port).
+    npmd:kill(IP, Port),
+
+    % Test if the node is still up.
+    % With R14B, epmd will not accept kill
+    % requests from non-local clients or
+    % when active nodes are connected.
+    try npmd:names(IP, Port) of
+        _ -> npmd:flood(IP, Port)
+    catch
+        _:_ -> ok
+    end.
 
 epmd(ProxyPort) ->
     npmd:epmd(ProxyPort).
