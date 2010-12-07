@@ -35,7 +35,7 @@
 -export([kill/2, names/2, epmd/1, flood/2]).
 
 kill(IP, Port) ->
-    Packet = list_to_binary([<<107,"OK">>]),
+    Packet = <<107,"OK">>,
     {ok, Socket} = gen_tcp:connect(IP, Port, [
             {packet,2},
             {active, true},
@@ -45,7 +45,7 @@ kill(IP, Port) ->
     wait(Socket).
 
 names(IP, Port) ->
-    Packet = list_to_binary([<<110>>]),
+    Packet = <<110>>,
     {ok, Socket} = gen_tcp:connect(IP, Port, [
             {packet,2},
             {active, true},
